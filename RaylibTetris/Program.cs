@@ -520,9 +520,9 @@ namespace RaylibTetris
         public static readonly int[,] srsOffsetsY_J = new int[4, 5]
         {
             { 0, 0, 0, 0, 0 },
-            { 0, 0, 1, -1, -2 },
+            { 0, 0, 1, -1, -2 }, // technically should be { 0, 0, 1, -2, -2 } according to the wiki
             { 0, 0, 0, 0, 0 },
-            { 0, 0, 1, -1, -2 },
+            { 0, 0, 1, -1, -2 }, // but that made rotations weird
         };
 
         public static readonly int[,] srsOffsetsX_I = new int[4, 5]
