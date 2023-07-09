@@ -36,6 +36,14 @@ namespace RaylibTetris
         public static float lockTimer = lockWaitTime;
         public static bool locking = false;
 
+        public static float shiftPressDuration = 0.2f;
+        public static float shiftHoldDuration = 0.05f;
+        public static float shiftTimer = 0;
+        public static int shiftDirection = -1;
+
+        public static int score = 0;
+        public static int[] scorePerLines = { 40, 100, 300, 1200 };
+
         public static float targetFps = 60;
 
         public static float dropTimer = timeBetweenDrops;
@@ -78,16 +86,41 @@ namespace RaylibTetris
         {
             bool pieceMovedByPlayer = false;
 
+            shiftTimer -= Raylib.GetFrameTime();
+
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_LEFT))
             {
+                shiftDirection = -1;
+                shiftTimer = shiftPressDuration;
                 bool moved = CollisionManager.TryMovePiece(board, playPiece, -1, 0);
                 pieceMovedByPlayer |= moved;
             }
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_RIGHT))
             {
+                shiftDirection = 1;
+                shiftTimer = shiftPressDuration;
                 bool moved = CollisionManager.TryMovePiece(board, playPiece, 1, 0);
                 pieceMovedByPlayer |= moved;
             }
+            if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT))
+            {
+                if (shiftTimer <= 0)
+                {
+                    shiftTimer += shiftHoldDuration;
+                    bool moved = CollisionManager.TryMovePiece(board, playPiece, shiftDirection, 0);
+                    pieceMovedByPlayer |= moved;
+                }
+            }
+            if (Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT))
+            {
+                if (shiftTimer <= 0)
+                {
+                    shiftTimer += shiftHoldDuration;
+                    bool moved = CollisionManager.TryMovePiece(board, playPiece, shiftDirection, 0);
+                    pieceMovedByPlayer |= moved;
+                }
+            }
+
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_DOWN))
             {
                 dropTimer = timeBetweenDrops * 0.2f;
@@ -95,6 +128,11 @@ namespace RaylibTetris
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_UP))
             {
                 bool rotated = CollisionManager.TryRotatePiece(board, playPiece, true);
+                pieceMovedByPlayer |= rotated;
+            }
+            if (Raylib.IsKeyPressed(KeyboardKey.KEY_Z))
+            {
+                bool rotated = CollisionManager.TryRotatePiece(board, playPiece, false);
                 pieceMovedByPlayer |= rotated;
             }
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_P))
@@ -121,6 +159,8 @@ namespace RaylibTetris
             {
                 playPieceCanDescend = CollisionManager.CanMoveDown(board, playPiece);
             }
+
+            gravity += 0.0002f * Raylib.GetFrameTime();
 
             if (playPieceCanDescend)
             {
@@ -173,6 +213,8 @@ namespace RaylibTetris
             Raylib.DrawRectangle(boardScreenX, boardScreenY, Board.width * BoardRenderer.gridSize, (int)(0.8f * BoardRenderer.gridSize), screenBgColor);
             DrawHeldPiece();
             DrawPieceBag();
+            Raylib.DrawText(gravity.ToString(), 1, 1, 10, Color.LIGHTGRAY);
+            Raylib.DrawText($"Score: {score.ToString()}",30, Raylib.GetScreenHeight() - 30, 20, Color.WHITE);
             Raylib.EndDrawing();
         }
 
@@ -335,6 +377,7 @@ namespace RaylibTetris
                     }
                 }
             }
+            score += clearedLines <= 0 ? 0 : (clearedLines > 4 ? 1200 : scorePerLines[clearedLines - 1]);
         }
     }
 
@@ -560,8 +603,8 @@ namespace RaylibTetris
             int x = pieceOffsetIndex == 0 ? 0 : pieceOffsetsX[pieceType, pieceOffsetIndex - 1];
             int y = pieceOffsetIndex == 0 ? 0 : pieceOffsetsY[pieceType, pieceOffsetIndex - 1];
 
-            int srsOffsetX = 0;
-            int srsOffsetY = 0;
+            int srsOffsetX;
+            int srsOffsetY;
 
             switch (pieceType)
             {
